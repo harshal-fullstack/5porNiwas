@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, SafeAreaView, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LayoutDashboard, BedDouble, Receipt, Wrench, PlusCircle } from 'lucide-react-native';
+import { LayoutDashboard, BedDouble, Receipt, Wrench, PlusCircle, Zap } from 'lucide-react-native';
 
 import { COLORS, SIZES, SHADOWS, FONTS } from './src/theme/theme';
 import DeviceFrame from './src/components/DeviceFrame';
@@ -14,13 +14,16 @@ import RoomsScreen from './src/screens/RoomsScreen';
 import LedgerScreen from './src/screens/LedgerScreen';
 import ComplaintsScreen from './src/screens/ComplaintsScreen';
 import AddTenantScreen from './src/screens/AddTenantScreen';
+import UtilitiesScreen from './src/screens/UtilitiesScreen';
 
 // Mock Data
 import { 
   INITIAL_ROOMS, 
   INITIAL_TENANTS, 
   INITIAL_TRANSACTIONS, 
-  INITIAL_COMPLAINTS 
+  INITIAL_COMPLAINTS,
+  INITIAL_UTILITIES,
+  INITIAL_ROOM_METERS
 } from './src/utils/mockData';
 
 export default function App() {
@@ -31,6 +34,8 @@ export default function App() {
   const [tenants, setTenants] = useState(INITIAL_TENANTS);
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [complaints, setComplaints] = useState(INITIAL_COMPLAINTS);
+  const [utilities, setUtilities] = useState(INITIAL_UTILITIES);
+  const [roomMeters, setRoomMeters] = useState(INITIAL_ROOM_METERS);
   
   // Modal / Receipt States
   const [activeReceiptTx, setActiveReceiptTx] = useState(null);
@@ -215,6 +220,112 @@ export default function App() {
     setTransactions([initialTx, ...transactions]);
   };
 
+  const handleUpdateMeter = (roomId, currReading, rate) => {
+    setRoomMeters(prev => prev.map(meter => {
+      if (meter.roomId === roomId) {
+        return {
+          ...meter,
+          currReading,
+          rate,
+        };
+      }
+      return meter;
+    }));
+  };
+
+  const handleBillRoom = (roomId) => {
+    const meter = roomMeters.find(m => m.roomId === roomId);
+    if (!meter) return;
+
+    const tenant = tenants.find(t => t.roomNumber === meter.roomNumber);
+    if (!tenant) return;
+
+    const units = Math.max(0, meter.currReading - meter.prevReading);
+    const billAmount = units * meter.rate;
+
+    if (billAmount <= 0) {
+      alert('Electricity usage is 0. No bill to generate.');
+      return;
+    }
+
+    // 1. Update room meter status
+    setRoomMeters(prev => prev.map(m => {
+      if (m.roomId === roomId) {
+        return { ...m, status: 'Pending' };
+      }
+      return m;
+    }));
+
+    // 2. Create pending transaction log
+    const newTx = {
+      id: `tx${Date.now().toString().slice(-4)}`,
+      tenantName: tenant.name,
+      roomNumber: tenant.roomNumber,
+      amount: billAmount,
+      date: new Date().toISOString().split('T')[0],
+      method: 'Electricity Sub-meter',
+      status: 'Pending',
+    };
+    setTransactions([newTx, ...transactions]);
+
+    // 3. Update room status to pending
+    const room = rooms.find(r => r.id === roomId);
+    if (room && room.status === 'paid') {
+      setRooms(prevRooms => prevRooms.map(r => {
+        if (r.id === roomId) {
+          return { ...r, status: 'pending' };
+        }
+        return r;
+      }));
+    }
+
+    alert(`Electricity bill of ₹${billAmount} generated for Room ${meter.roomNumber} (${tenant.name}) successfully!`);
+  };
+
+  const handleAddUtilityBill = (billData) => {
+    const newBill = {
+      id: `u${Date.now().toString().slice(-3)}`,
+      name: billData.name,
+      amount: billData.amount,
+      type: billData.type,
+      status: 'Paid',
+      dueDate: billData.dueDate,
+    };
+    setUtilities([newBill, ...utilities]);
+    alert(`Utility bill "${billData.name}" of ₹${billData.amount} logged successfully!`);
+  };
+
+  const handlePayTransaction = (txId) => {
+    let matchedTx = null;
+    const updatedTransactions = transactions.map(tx => {
+      if (tx.id === txId) {
+        matchedTx = { ...tx, status: 'Paid', date: new Date().toISOString().split('T')[0] };
+        return matchedTx;
+      }
+      return tx;
+    });
+    setTransactions(updatedTransactions);
+
+    if (matchedTx && matchedTx.method === 'Electricity Sub-meter') {
+      setRoomMeters(prev => prev.map(m => {
+        if (m.roomNumber === matchedTx.roomNumber) {
+          return { ...m, status: 'Paid' };
+        }
+        return m;
+      }));
+
+      const room = rooms.find(r => r.number === matchedTx.roomNumber);
+      if (room) {
+        setRooms(prevRooms => prevRooms.map(r => {
+          if (r.number === matchedTx.roomNumber) {
+            return { ...r, status: 'paid' };
+          }
+          return r;
+        }));
+      }
+    }
+  };
+
   const handleViewReceipt = (tx) => {
     setActiveReceiptTx(tx);
     setReceiptVisible(true);
@@ -248,6 +359,18 @@ export default function App() {
             tenants={tenants}
             onAddTransaction={handleAddTransaction}
             onViewReceipt={handleViewReceipt}
+            onPayTransaction={handlePayTransaction}
+          />
+        );
+      case 'utilities':
+        return (
+          <UtilitiesScreen
+            utilities={utilities}
+            roomMeters={roomMeters}
+            tenants={tenants}
+            onUpdateMeter={handleUpdateMeter}
+            onBillRoom={handleBillRoom}
+            onAddUtilityBill={handleAddUtilityBill}
           />
         );
       case 'complaints':
@@ -286,6 +409,7 @@ export default function App() {
             { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
             { id: 'rooms', label: 'Rooms', icon: BedDouble },
             { id: 'ledger', label: 'Ledger', icon: Receipt },
+            { id: 'utilities', label: 'Bills', icon: Zap },
             { id: 'complaints', label: 'Issues', icon: Wrench },
             { id: 'add', label: 'Register', icon: PlusCircle },
           ].map(tab => {
