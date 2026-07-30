@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Modal, 
 import { Receipt, Search, IndianRupee, ArrowDownCircle, ArrowUpRight, Plus, Check } from 'lucide-react-native';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../theme/theme';
 
-export default function LedgerScreen({ transactions, tenants, onAddTransaction, onViewReceipt }) {
+export default function LedgerScreen({ transactions, tenants, onAddTransaction, onViewReceipt, onPayTransaction }) {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -116,6 +116,15 @@ export default function LedgerScreen({ transactions, tenants, onAddTransaction, 
                 >
                   <Receipt size={14} color={COLORS.primary} style={{ marginRight: 2 }} />
                   <Text style={styles.receiptBtnText}>Receipt</Text>
+                </TouchableOpacity>
+              )}
+              {item.status === 'Pending' && onPayTransaction && (
+                <TouchableOpacity 
+                  style={[styles.receiptIconBtn, { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}
+                  onPress={() => onPayTransaction(item.id)}
+                >
+                  <Check size={12} color="#0F172A" style={{ marginRight: 2 }} />
+                  <Text style={[styles.receiptBtnText, { color: '#0F172A' }]}>Pay Bill</Text>
                 </TouchableOpacity>
               )}
             </View>
