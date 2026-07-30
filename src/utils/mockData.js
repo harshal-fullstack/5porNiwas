@@ -136,3 +136,22 @@ export const INITIAL_COMPLAINTS = [
   { id: 'c2', tenantName: 'Amit Patel', roomNumber: '102', title: 'Bathroom tap leak', desc: 'The washbasin tap has a constant slow drip wasting water.', date: '2026-07-06', status: 'In Progress', priority: 'Medium' },
   { id: 'c3', tenantName: 'Deepak Kumar', roomNumber: '202', title: 'Slow Wi-Fi speed', desc: 'Internet speed is very slow in the evening, unable to stream or work.', date: '2026-07-07', status: 'Resolved', priority: 'Low' },
 ];
+
+export const INITIAL_UTILITIES = [
+  { id: 'u1', name: 'Main Electricity', amount: 8400, type: 'Electricity', status: 'Paid', dueDate: '2026-07-25' },
+  { id: 'u2', name: 'High-Speed Wi-Fi', amount: 1500, type: 'Internet', status: 'Paid', dueDate: '2026-07-15' },
+  { id: 'u3', name: 'Water Tanker', amount: 2200, type: 'Water', status: 'Paid', dueDate: '2026-07-20' },
+  { id: 'u4', name: 'Security Guard Salary', amount: 12000, type: 'Staff', status: 'Paid', dueDate: '2026-07-31' },
+];
+
+export const INITIAL_ROOM_METERS = [
+  { roomId: '101', roomNumber: '101', prevReading: 1240, currReading: 1355, rate: 8, status: 'Unbilled' },
+  { roomId: '102', roomNumber: '102', prevReading: 2150, currReading: 2310, rate: 8, status: 'Paid' },
+  { roomId: '103', roomNumber: '103', prevReading: 450, currReading: 450, rate: 8, status: 'Unbilled' },
+  { roomId: '201', roomNumber: '201', prevReading: 980, currReading: 1110, rate: 8, status: 'Pending' },
+  { roomId: '202', roomNumber: '202', prevReading: 3110, currReading: 3290, rate: 8, status: 'Paid' },
+  { roomId: '203', roomNumber: '203', prevReading: 150, currReading: 150, rate: 8, status: 'Unbilled' },
+  { roomId: '301', roomNumber: '301', prevReading: 1540, currReading: 1710, rate: 8, status: 'Paid' },
+  { roomId: '302', roomNumber: '302', prevReading: 890, currReading: 1010, rate: 8, status: 'Pending' },
+];
+
